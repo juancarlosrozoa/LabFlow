@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: labflow-db
+    environment:
+      POSTGRES_DB: labflow
+      POSTGRES_USER: labflow
+      POSTGRES_PASSWORD: labflow123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: labflow-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/labflow
+      SPRING_DATASOURCE_USERNAME: labflow
+      SPRING_DATASOURCE_PASSWORD: labflow123
+      JWT_SECRET: labflow-super-secret-key-must-be-at-least-256-bits-long-for-hs256
+      JWT_EXPIRATION: 86400000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
